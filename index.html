@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚨 AI 전지역 확장형 GPS 이탈 및 커스텀 펜싱 통합 관제센터</title>
+    <!-- 구글 폰트 적용 (프리미엄 무드) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Outfit:wght@300;400;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- 리믹스 아이콘 팩 -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+    <!-- Leaflet 지도 CDN -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root {
+            --bg-base: #0b0f19;
+            --bg-card: rgba(17, 24, 39, 0.88);
+            --border-neon: rgba(139, 92, 246, 0.4);
+            --accent: #8b5cf6;       /* 퍼플 */
+            --accent-glow: #a78bfa;
+            --success: #10b981;      /* 그린 */
+            --warning: #f59e0b;      /* 오렌지 */
+            --danger: #ef4444;       /* 레드 */
+            --danger-glow: #f87171;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', 'Noto Sans KR', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- 상단 네비게이션 헤더 --- */
+        header {
+            background: rgba(15, 23, 42, 0.95);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 10px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-logo i {
+            color: var(--accent);
+            font-size: 24px;
+            text-shadow: 0 0 10px var(--accent);
+            animation: pulse 2s infinite;
+        }
+
+        .header-logo h1 {
+            font-size: 17px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #fff 30%, var(--accent-glow) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* 상단 지역 전환 드롭다운 */
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .zone-select-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .sel-control-zone {
+            background: #1f2937;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sel-control-zone:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 8px var(--accent);
+        }
+
+        .system-status-badge {
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid var(--success);
+            color: var(--success);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .system-status-badge span {
+            width: 6px;
+            height: 6px;
+            background-color: var(--success);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--success);
+            animation: pulse 1.5s infinite;
+        }
+
+        /* --- 메인 그리드 레이아웃 --- */
+        .main-container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            height: calc(100vh - 58px);
+            position: relative;
+        }
+
+        /* --- 좌측 관제 사이드바 --- */
+        .control-sidebar {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+            z-index: 5;
+        }
+
+        .info-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .info-card-title {
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--accent-glow);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* 실시간 상태 미터기 */
+        .alarm-monitor {
+            text-align: center;
+            padding: 14px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .alarm-monitor.state-safe {
+            background: rgba(16, 185, 129, 0.08);
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .alarm-monitor.state-warn {
+            background: rgba(245, 158, 11, 0.08);
+            border-color: rgba(245, 158, 11, 0.4);
+            animation: shake 0.5s ease;
+        }
+
+        .alarm-monitor.state-danger {
+            background: rgba(239, 68, 68, 0.12);
+            border-color: rgba(239, 68, 68, 0.5);
+            animation: pulse-border 1.5s infinite;
+        }
+
+        .alarm-status-icon {
+            font-size: 28px;
+            transition: transform 0.3s ease;
+        }
+
+        .alarm-monitor.state-danger .alarm-status-icon {
+            animation: bounce 1s infinite;
+        }
+
+        .alarm-status-text {
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .alarm-desc {
+            font-size: 10.5px;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        /* 수치 미터 정보 */
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11.5px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            padding-bottom: 5px;
+        }
+
+        .metric-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .metric-label {
+            color: var(--text-muted);
+        }
+
+        .metric-value {
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        /* 버튼 컨트롤 스타일 */
+        .btn-action {
+            background: linear-gradient(135deg, var(--accent) 0%, #7c3aed 100%);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            padding: 9px 14px;
+            font-size: 11.5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(139, 92, 246, 0.5);
+        }
+
+        .btn-action:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: none;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: none;
+        }
+
+        /* 그리기 툴 전용 스페셜 토글 버튼 */
+        .btn-tool-draw {
+            background: rgba(139, 92, 246, 0.12);
+            border: 1px dashed var(--accent);
+            color: var(--accent-glow);
+            box-shadow: none;
+        }
+
+        .btn-tool-draw:hover {
+            background: rgba(139, 92, 246, 0.25);
+            color: white;
+        }
+
+        .btn-tool-draw.drawing-active {
+            background: #ef4444;
+            border: 1px solid #f87171;
+            color: white;
+            animation: pulse-border 1.5s infinite;
+        }
+
+        /* 구조 문자 패이로드 텍스트아레아 */
+        .payload-textarea {
+            width: 100%;
+            height: 80px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 8px;
+            color: #10b981;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 10.5px;
+            resize: none;
+            outline: none;
+        }
+
+        /* --- 우측 지도 관제부 --- */
+        .map-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-base);
+        }
+
+        /* 지도 위 떠다니는 설명 가이드 오버레이 */
+        .map-overlay-tip {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid var(--border-neon);
+            border-radius: 12px;
+            padding: 12px 18px;
+            font-size: 11px;
+            max-width: 440px;
+            pointer-events: none;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+
+        /* --- 애니메이션들 --- */
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.08); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-4px); }
+            40%, 80% { transform: translateX(4px); }
+        }
+
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. 통제실 탑 헤더 (지역 선택 드롭다운 탑재) -->
+    <header>
+        <div class="header-logo">
+            <i class="ri-radar-line"></i>
+            <div>
+                <h1>GPS 전지역 확장형 커스텀 펜싱 AI 관제센터</h1>
+            </div>
+        </div>
+        <div class="header-controls">
+            <span class="zone-select-label"><i class="ri-map-pin-2-line"></i> 관제 타깃 지역:</span>
+            <select class="sel-control-zone" id="sel-control-zone-presets">
+                <option value="songjeong_park">🚇 송정공원역 구역 (주택·공원 밀착지구)</option>
+                <option value="sangmu_hall">🚇 상무역 시청로 구역 (공공·행정 초밀집)</option>
+                <option value="gwangju_songjeong">🚇 광주송정역 허브 구역 (KTX 복합환승지대)</option>
+                <option value="custom_world">🌐 [커스텀 설계 모드] 전 세계 어디나 자유로운 펜싱</option>
+            </select>
+            <div class="system-status-badge">
+                <span></span>
+                위성 Geofence 다중 동기화 완료
+            </div>
+        </div>
+    </header>
+
+    <!-- 2. 메인 대시보드 뷰포트 -->
+    <div class="main-container">
+        
+        <!-- 좌측 제어반 -->
+        <div class="control-sidebar">
+            
+            <!-- 실시간 탐지 신호 분석 패널 -->
+            <div class="alarm-monitor state-safe" id="status-panel">
+                <i class="ri-checkbox-circle-fill alarm-status-icon" id="status-icon" style="color:var(--success);"></i>
+                <div class="alarm-status-text" id="status-title">안전 이동 상태</div>
+                <p class="alarm-desc" id="status-desc">대상자가 정상 안전 인도(경로)를 이탈하지 않고 잘 걷고 있으며 주변에 급작스런 사고 발생 위험 요인이 없습니다.</p>
+            </div>
+
+            <!-- 실시간 동선 스펙 수치 미터기 -->
+            <div class="info-card">
+                <div class="info-card-title">
+                    <i class="ri-dashboard-3-line"></i>
+                    실시간 트래킹 통계
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">현재 가상 기기 좌표</span>
+                    <span class="metric-value" id="meter-coords">35.1376, 126.7909</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">정상 경로와의 이탈 거리</span>
+                    <span class="metric-value" id="meter-distance" style="color:var(--success);">0.00 m</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">위험 바운더리 펜스 상태</span>
+                    <span class="metric-value" id="meter-danger-zone" style="color:var(--success);">안전 구역 체류</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">총 이동한 누적 시간</span>
+                    <span class="metric-value" id="meter-time">00분 00초</span>
+                </div>
+            </div>
+
+            <!-- 신규 탑재: 동적 실시간 펜싱 빌더 툴바 (수정: 대상자 주행 동선 그리기 기능 전격 추가) -->
+            <div class="info-card" style="border-color: var(--border-neon); background: rgba(139, 92, 246, 0.04);">
+                <div class="info-card-title" style="color:var(--accent-glow);">
+                    <i class="ri-quill-pen-line"></i>
+                    실시간 커스텀 펜싱 설계실
+                </div>
+                <p class="alarm-desc" style="font-size:10px;">원하는 지역 지도로 날아가서 버튼을 누르고 지도를 클릭하여 나만의 경로와 위험구역을 실시간으로 설계하세요!</p>
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom: 8px;">
+                    <button class="btn-action btn-tool-draw" id="btn-draw-safe-path">
+                        <i class="ri-vector-line"></i> 정상 인도 그리기
+                    </button>
+                    <button class="btn-action btn-tool-draw" id="btn-draw-danger-fence">
+                        <i class="ri-polygon-line"></i> 위험 구역 그리기
+                    </button>
+                </div>
+                <!-- 2차 업그레이드: 대상자 가상 주행 동선을 직접 그릴 수 있는 단추 추가 -->
+                <button class="btn-action btn-tool-draw" id="btn-draw-user-trajectory" style="width:100%; margin-bottom:8px; background: rgba(192, 132, 252, 0.1); border: 1px dashed #c084fc; color:#d8b4fe;">
+                    <i class="ri-route-line"></i> 🏃 대상자 가상 이동선(궤적) 직접 그리기
+                </button>
+
+                <button class="btn-action btn-secondary" id="btn-clear-custom-drawing" style="font-size:10.5px; padding:6px 10px;">
+                    <i class="ri-delete-bin-line"></i> 커스텀 수제 도면 지우기
+                </button>
+            </div>
+
+            <!-- 조작 제어 도구 모음 -->
+            <div class="info-card">
+                <div class="info-card-title">
+                    <i class="ri-settings-5-line"></i>
+                    수동 수색 통제반
+                </div>
+                <button class="btn-action" id="btn-toggle-simulation">
+                    <i class="ri-play-fill"></i> 가상 이동 수색 시뮬레이션 시작
+                </button>
+                <button class="btn-action btn-secondary" id="btn-reset-simulation">
+                    <i class="ri-refresh-line"></i> 동선 데이터 초기화 (리셋)
+                </button>
+            </div>
+
+            <!-- SOS 긴급 발송 패키지 자동 생성 구역 -->
+            <div class="info-card">
+                <div class="info-card-title">
+                    <i class="ri-mail-send-line" style="color:var(--accent-glow);"></i>
+                    SOS 긴급 문자 발송 데이터 포맷
+                </div>
+                <p class="alarm-desc" style="margin-bottom:6px;">이탈 또는 위험 진입 시, Coolsms/Solapi API 전송용으로 즉시 패키징되는 JSON 구조 데이터입니다.</p>
+                <textarea class="payload-textarea" id="text-sms-payload" readonly></textarea>
+            </div>
+
+        </div>
+
+        <!-- 우측 지도 관제부 -->
+        <div class="map-wrapper">
+            <!-- 지도가 로딩되는 구역 -->
+            <div id="map"></div>
+
+            <!-- 지도 위 떠다니는 설명 가이드 오버레이 -->
+            <div class="map-overlay-tip">
+                <div style="font-weight:700; font-size:11.5px; display:flex; align-items:center; gap:6px; color:#c084fc;">
+                    <i class="ri-map-fill"></i> 다중 관제 및 커스텀 펜싱 기하 공간 분석기
+                </div>
+                <span style="color:#e2e8f0; line-height:1.4; margin-top:2px;">
+                    1. <strong>지역 프리셋 변경</strong>: 우측 상단의 드롭다운으로 넓은 거점들을 자유롭게 전환하세요.<br>
+                    2. <strong>스무스 수동 주행</strong>: 지도의 임의 지점을 클릭하면, 대상 기기가 현 위치에서 클릭 지점까지 <strong>실시간 도보 속도로 직접 걸어가며</strong> 경로 안전성을 감지합니다.<br>
+                    3. <strong>수제 궤적 설계</strong>: <strong>[🏃 대상자 가상 이동선 직접 그리기]</strong> 버튼을 켜고 지도를 찍으면 나만의 주행 동선이 그려지며, 시작 버튼 클릭 시 완벽히 추종 주행하게 됩니다.
+                </span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Leaflet 지도 JS 및 핵심 연산 알고리즘 JS 연동 -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="002_path_analyzer.js"></script>
+</body>
+</html>
