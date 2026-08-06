@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🚨 AI 실시간 GPS 동선 이탈 및 위험구역 침범 감지 통제소</title>
+    <title>🚨 AI 전지역 확장형 GPS 이탈 및 커스텀 펜싱 통합 관제센터</title>
     <!-- 구글 폰트 적용 (프리미엄 무드) -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Outfit:wght@300;400;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
     <!-- 리믹스 아이콘 팩 -->
@@ -13,7 +13,7 @@
     <style>
         :root {
             --bg-base: #0b0f19;
-            --bg-card: rgba(17, 24, 39, 0.85);
+            --bg-card: rgba(17, 24, 39, 0.88);
             --border-neon: rgba(139, 92, 246, 0.4);
             --accent: #8b5cf6;       /* 퍼플 */
             --accent-glow: #a78bfa;
@@ -43,9 +43,9 @@
 
         /* --- 상단 네비게이션 헤더 --- */
         header {
-            background: rgba(15, 23, 42, 0.9);
+            background: rgba(15, 23, 42, 0.95);
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 12px 24px;
+            padding: 10px 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -66,7 +66,7 @@
         }
 
         .header-logo h1 {
-            font-size: 18px;
+            font-size: 17px;
             font-weight: 700;
             letter-spacing: -0.5px;
             background: linear-gradient(135deg, #fff 30%, var(--accent-glow) 100%);
@@ -74,8 +74,39 @@
             -webkit-text-fill-color: transparent;
         }
 
+        /* 상단 지역 전환 드롭다운 */
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .zone-select-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .sel-control-zone {
+            background: #1f2937;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sel-control-zone:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 8px var(--accent);
+        }
+
         .system-status-badge {
-            background: rgba(16, 185, 129, 0.15);
+            background: rgba(16, 185, 129, 0.12);
             border: 1px solid var(--success);
             color: var(--success);
             padding: 4px 10px;
@@ -101,7 +132,7 @@
             flex: 1;
             display: grid;
             grid-template-columns: 350px 1fr;
-            height: calc(100vh - 60px);
+            height: calc(100vh - 58px);
             position: relative;
         }
 
@@ -110,10 +141,10 @@
             background: var(--bg-card);
             backdrop-filter: blur(16px);
             border-right: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 20px;
+            padding: 16px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 16px;
             overflow-y: auto;
             z-index: 5;
         }
@@ -122,14 +153,14 @@
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.06);
             border-radius: 12px;
-            padding: 16px;
+            padding: 14px;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
         }
 
         .info-card-title {
-            font-size: 13px;
+            font-size: 12.5px;
             font-weight: 600;
             color: var(--accent-glow);
             text-transform: uppercase;
@@ -142,13 +173,13 @@
         /* 실시간 상태 미터기 */
         .alarm-monitor {
             text-align: center;
-            padding: 16px;
+            padding: 14px;
             border-radius: 12px;
             transition: all 0.3s ease;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
@@ -170,7 +201,7 @@
         }
 
         .alarm-status-icon {
-            font-size: 32px;
+            font-size: 28px;
             transition: transform 0.3s ease;
         }
 
@@ -179,12 +210,12 @@
         }
 
         .alarm-status-text {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 700;
         }
 
         .alarm-desc {
-            font-size: 11px;
+            font-size: 10.5px;
             color: var(--text-muted);
             line-height: 1.4;
         }
@@ -194,9 +225,9 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 12px;
+            font-size: 11.5px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-            padding-bottom: 6px;
+            padding-bottom: 5px;
         }
 
         .metric-row:last-child {
@@ -219,15 +250,15 @@
             border: none;
             border-radius: 8px;
             color: white;
-            padding: 10px 16px;
-            font-size: 12px;
+            padding: 9px 14px;
+            font-size: 11.5px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 6px;
             box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
         }
 
@@ -251,17 +282,37 @@
             box-shadow: none;
         }
 
+        /* 그리기 툴 전용 스페셜 토글 버튼 */
+        .btn-tool-draw {
+            background: rgba(139, 92, 246, 0.12);
+            border: 1px dashed var(--accent);
+            color: var(--accent-glow);
+            box-shadow: none;
+        }
+
+        .btn-tool-draw:hover {
+            background: rgba(139, 92, 246, 0.25);
+            color: white;
+        }
+
+        .btn-tool-draw.drawing-active {
+            background: #ef4444;
+            border: 1px solid #f87171;
+            color: white;
+            animation: pulse-border 1.5s infinite;
+        }
+
         /* 구조 문자 패이로드 텍스트아레아 */
         .payload-textarea {
             width: 100%;
-            height: 90px;
+            height: 80px;
             background: rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 8px;
             padding: 8px;
             color: #10b981;
             font-family: 'Courier New', Courier, monospace;
-            font-size: 11px;
+            font-size: 10.5px;
             resize: none;
             outline: none;
         }
@@ -284,12 +335,12 @@
             position: absolute;
             top: 20px;
             left: 20px;
-            background: rgba(15, 23, 42, 0.85);
+            background: rgba(15, 23, 42, 0.95);
             border: 1px solid var(--border-neon);
             border-radius: 12px;
             padding: 12px 18px;
-            font-size: 11.5px;
-            max-width: 400px;
+            font-size: 11px;
+            max-width: 440px;
             pointer-events: none;
             z-index: 1000;
             display: flex;
@@ -326,17 +377,26 @@
 </head>
 <body>
 
-    <!-- 1. 통제실 탑 헤더 -->
+    <!-- 1. 통제실 탑 헤더 (지역 선택 드롭다운 탑재) -->
     <header>
         <div class="header-logo">
             <i class="ri-radar-line"></i>
             <div>
-                <h1>GPS 동선 예측 및 실시간 위험구역 펜싱 관제센터</h1>
+                <h1>GPS 전지역 확장형 커스텀 펜싱 AI 관제센터</h1>
             </div>
         </div>
-        <div class="system-status-badge">
-            <span></span>
-            AI 자이로스코프 수색 위성 가동 중
+        <div class="header-controls">
+            <span class="zone-select-label"><i class="ri-map-pin-2-line"></i> 관제 타깃 지역:</span>
+            <select class="sel-control-zone" id="sel-control-zone-presets">
+                <option value="songjeong_park">🚇 송정공원역 구역 (주택·공원 밀착지구)</option>
+                <option value="sangmu_hall">🚇 상무역 시청로 구역 (공공·행정 초밀집)</option>
+                <option value="gwangju_songjeong">🚇 광주송정역 허브 구역 (KTX 복합환승지대)</option>
+                <option value="custom_world">🌐 [커스텀 설계 모드] 전 세계 어디나 자유로운 펜싱</option>
+            </select>
+            <div class="system-status-badge">
+                <span></span>
+                위성 Geofence 다중 동기화 완료
+            </div>
         </div>
     </header>
 
@@ -377,6 +437,32 @@
                 </div>
             </div>
 
+            <!-- 신규 탑재: 동적 실시간 펜싱 빌더 툴바 (수정: 대상자 주행 동선 그리기 기능 전격 추가) -->
+            <div class="info-card" style="border-color: var(--border-neon); background: rgba(139, 92, 246, 0.04);">
+                <div class="info-card-title" style="color:var(--accent-glow);">
+                    <i class="ri-quill-pen-line"></i>
+                    실시간 커스텀 펜싱 설계실
+                </div>
+                <p class="alarm-desc" style="font-size:10px;">원하는 지역 지도로 날아가서 버튼을 누르고 지도를 클릭하여 나만의 경로와 위험구역을 실시간으로 설계하세요!</p>
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom: 8px;">
+                    <button class="btn-action btn-tool-draw" id="btn-draw-safe-path">
+                        <i class="ri-vector-line"></i> 정상 인도 그리기
+                    </button>
+                    <button class="btn-action btn-tool-draw" id="btn-draw-danger-fence">
+                        <i class="ri-polygon-line"></i> 위험 구역 그리기
+                    </button>
+                </div>
+                <!-- 2차 업그레이드: 대상자 가상 주행 동선을 직접 그릴 수 있는 단추 추가 -->
+                <button class="btn-action btn-tool-draw" id="btn-draw-user-trajectory" style="width:100%; margin-bottom:8px; background: rgba(192, 132, 252, 0.1); border: 1px dashed #c084fc; color:#d8b4fe;">
+                    <i class="ri-route-line"></i> 🏃 대상자 가상 이동선(궤적) 직접 그리기
+                </button>
+
+                <button class="btn-action btn-secondary" id="btn-clear-custom-drawing" style="font-size:10.5px; padding:6px 10px;">
+                    <i class="ri-delete-bin-line"></i> 커스텀 수제 도면 지우기
+                </button>
+            </div>
+
             <!-- 조작 제어 도구 모음 -->
             <div class="info-card">
                 <div class="info-card-title">
@@ -403,21 +489,20 @@
 
         </div>
 
-        <!-- 우측 맵 가로질러가기 컨테이너 -->
+        <!-- 우측 지도 관제부 -->
         <div class="map-wrapper">
             <!-- 지도가 로딩되는 구역 -->
             <div id="map"></div>
 
-            <!-- 지리 가이드 오버레이 안내창 -->
+            <!-- 지도 위 떠다니는 설명 가이드 오버레이 -->
             <div class="map-overlay-tip">
-                <div style="font-weight:700; font-size:12px; display:flex; align-items:center; gap:6px; color:#c084fc;">
-                    <i class="ri-information-line"></i> AI 경로 감지 작동 시나리오 가이드
+                <div style="font-weight:700; font-size:11.5px; display:flex; align-items:center; gap:6px; color:#c084fc;">
+                    <i class="ri-map-fill"></i> 다중 관제 및 커스텀 펜싱 기하 공간 분석기
                 </div>
                 <span style="color:#e2e8f0; line-height:1.4; margin-top:2px;">
-                    1. 지도 상의 <strong>점선(인도)</strong>이 대상자가 걸어야 할 정상 경로입니다.<br>
-                    2. 지도 내의 <strong>붉은색 원(공사중)</strong> 및 <strong>다각형(급경사 위험야산)</strong>이 위험 지역입니다.<br>
-                    3. <strong>시뮬레이션 시작</strong> 버튼을 누르면 송정역에서 출발한 대상자가 실제 걸어가는 궤적이 트래킹됩니다.<br>
-                    4. 대상자가 안전 통로를 벗어나거나 위험 다각형에 도달하는 순간, 좌측 통제반이 붉은 비상 모드로 변경되며 SOS 구조 데이터가 정밀 인코딩됩니다.
+                    1. <strong>지역 프리셋 변경</strong>: 우측 상단의 드롭다운으로 넓은 거점들을 자유롭게 전환하세요.<br>
+                    2. <strong>스무스 수동 주행</strong>: 지도의 임의 지점을 클릭하면, 대상 기기가 현 위치에서 클릭 지점까지 <strong>실시간 도보 속도로 직접 걸어가며</strong> 경로 안전성을 감지합니다.<br>
+                    3. <strong>수제 궤적 설계</strong>: <strong>[🏃 대상자 가상 이동선 직접 그리기]</strong> 버튼을 켜고 지도를 찍으면 나만의 주행 동선이 그려지며, 시작 버튼 클릭 시 완벽히 추종 주행하게 됩니다.
                 </span>
             </div>
         </div>
